@@ -1,0 +1,47 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  javaVersion: '11'
+  mavenVersion: '3.6.3'
+  appName: 'my-java-webapp'
+  dockerRegistryServiceConnection: 'your-docker-registry-service-connection'
+  azureSubscription: 'your-azure-subscription'
+  azureWebAppName: 'your-azure-web-app-name'
+  imageName: '$(dockerRegistryServiceConnection)/$(appName)'
+
+steps:
+- task: MavenAuthenticate@0
+  inputs:
+    mavenVersionOption: 'custom'
+    mavenVersion: '$(mavenVersion)'
+
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'package'
+    options: '-DskipTests=true'
+    publishJUnitResults: false
+    testResultsFiles: '**/TEST-*.xml'
+    codeCoverageToolOption: 'None'
+
+- task: Docker@2
+  inputs:
+    containerRegistry: '$(dockerRegistryServiceConnection)'
+    repository: '$(imageName)'
+    command: 'buildAndPush'
+    Dockerfile: 'Dockerfile'
+    tags: |
+      $(Build.BuildId)
+
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: '$(azureSubscription)'
+    appName: '$(azureWebAppName)'
+    package: '$(System.DefaultWorkingDirectory)/**/*.jar'
+    runtimeStack: 'JAVA|$(javaVersion)'
