@@ -3,7 +3,8 @@ com/example/service/DataService.class
 com/example/repository/DataRepository.class
 com/example/repository/StudentRepository.class
 com/example/controller/HomeController.class
+com/example/controller/BlobController.class
 com/example/model/DataEntity.class
+com/example/Application.class
 com/example/controller/StudentController.class
 com/example/service/StudentService.class
-Application.class
