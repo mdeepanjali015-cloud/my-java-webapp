@@ -43,6 +43,10 @@ jobs:
     name: Deploy to Azure Web App
     needs: build
     runs-on: ubuntu-latest
+    env:
+      AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
     steps:
       - name: Download JAR artifact
         uses: actions/download-artifact@v3
@@ -51,32 +55,32 @@ jobs:
 
       # Option A: Publish Profile (simplest)
       - name: Deploy using publish profile
-        if: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE != '' }}
+        if: ${{ env.AZURE_WEBAPP_PUBLISH_PROFILE != '' }}
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ env.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: '*.jar'
 
       # Option B: Service Principal (recommended for longer pipelines)
       - name: Login to Azure (Service Principal)
-        if: ${{ secrets.AZURE_CREDENTIALS != '' && secrets.AZURE_WEBAPP_PUBLISH_PROFILE == '' }}
+        if: ${{ env.AZURE_CREDENTIALS != '' && env.AZURE_WEBAPP_PUBLISH_PROFILE == '' }}
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ env.AZURE_CREDENTIALS }}
 
       - name: Deploy using service principal
-        if: ${{ secrets.AZURE_CREDENTIALS != '' && secrets.AZURE_WEBAPP_PUBLISH_PROFILE == '' }}
+        if: ${{ env.AZURE_CREDENTIALS != '' && env.AZURE_WEBAPP_PUBLISH_PROFILE == '' }}
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          package: '*.jar'
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: '*.jar' 
 
       - name: "Post-deploy: Confirm availability"
         run: |
           echo "Waiting for app to become available..."
           for i in {1..12}; do
-            status=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net/ || true)
+            status=$(curl -s -o /dev/null -w "%{http_code}" https://$AZURE_WEBAPP_NAME.azurewebsites.net/ || true)
             echo "status=$status"
             if [ "$status" = "200" ] || [ "$status" = "302" ]; then
               echo "App is responding"
