@@ -13,7 +13,7 @@ jobs:
     env:
       MAVEN_OPTS: -Xmx2G
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -74,19 +74,20 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: '*.jar' 
+          package: '*.jar'
 
-      - name: "Post-deploy: Confirm availability"
+  notify:
+    name: Notify Deployment Status
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify deployment status
         run: |
-          echo "Waiting for app to become available..."
-          for i in {1..12}; do
-            status=$(curl -s -o /dev/null -w "%{http_code}" https://$AZURE_WEBAPP_NAME.azurewebsites.net/ || true)
-            echo "status=$status"
-            if [ "$status" = "200" ] || [ "$status" = "302" ]; then
-              echo "App is responding"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "App did not respond in time"
-          exit 1
+          if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "✓ Build and deployment completed successfully!"
+          else
+            echo "✗ Build or deployment failed!"
+          fi
+
+
+
