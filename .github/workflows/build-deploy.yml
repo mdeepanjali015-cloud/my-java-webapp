@@ -72,7 +72,7 @@ jobs:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           package: '*.jar'
 
-      - name: Post-deploy: Confirm availability
+      - name: "Post-deploy: Confirm availability"
         run: |
           echo "Waiting for app to become available..."
           for i in {1..12}; do
